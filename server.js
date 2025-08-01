@@ -16,8 +16,8 @@ const corsOptions = {
   origin: [
     'https://hospitalmanagement3.vercel.app',
     'http://localhost:8080',
-    'http://localhost:3001',
-    'https://2-client-web2-p8dv.vercel.app'
+    'http://localhost:3001'
+    
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
