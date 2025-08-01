@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CLIENT || 'https://web2-client-seven.vercel.app',
+  origin: process.env.CLIENT || 'https://hospitalmanagement3.vercel.app',
   credentials: true,
   optionsSuccessStatus: 200
 };
