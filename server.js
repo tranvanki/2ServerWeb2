@@ -5,27 +5,26 @@ app.use(express.json());
 const expressJwt = require('express-jwt');
 const { signup, login, logout } = require('./api/controllers/authController');
 const path = require('path');
-// const session = require('express-session');
 const cors = require('cors');
 
 // body parser middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ FIXED CORS configuration with correct port
+// ✅ CORS configuration with explicit origins
 const corsOptions = {
   origin: [
-    'https://hospitalmanagement3.vercel.app',  
-    'http://localhost:8080',                   
-    'http://localhost:3001',                  
-    process.env.CLIENT                         
-  ].filter(Boolean), // Remove any undefined values
+    'https://hospitalmanagement3.vercel.app',
+    'http://localhost:8080',
+    'http://localhost:3001',
+    'https://2-client-web2-p8dv.vercel.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
     'Origin',
     'X-Requested-With',
-    'Content-Type', 
+    'Content-Type',
     'Accept',
     'Authorization',
     'Cache-Control'
@@ -33,11 +32,15 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// ✅ Apply CORS before any routes
 app.use(cors(corsOptions));
-
-// ✅ Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
+
+// ✅ Configure express-jwt
+app.use(expressJwt({
+  secret: process.env.JWT_SECRET,
+  algorithms: ['HS256'],
+  credentialsRequired: false
+}).unless({ path: ['/api/login', '/api/signup', '/health'] }));
 
 // Connect to MongoDB
 const mongoose = require('mongoose');
@@ -76,6 +79,9 @@ app.use('/medic-records', medicRecordRoutes);
 if (process.env.NODE_ENV === 'production') {
   app.use((err, req, res, next) => {
     console.error(err.stack);
+    if (err.name === 'UnauthorizedError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
     res.status(500).send('Something broke!');
   });
 }
