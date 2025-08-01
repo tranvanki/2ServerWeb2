@@ -1,5 +1,3 @@
-//---------------------------------------------------------------------------------
-
 const express = require('express');
 require('dotenv').config();
 const app = express();
@@ -14,14 +12,32 @@ const cors = require('cors');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS configuration
+// ✅ FIXED CORS configuration with correct port
 const corsOptions = {
-  origin: process.env.CLIENT || 'https://hospitalmanagement3.vercel.app',
+  origin: [
+    'https://hospitalmanagement3.vercel.app',  
+    'http://localhost:8080',                   
+    'http://localhost:3001',                  
+    process.env.CLIENT                         
+  ].filter(Boolean), // Remove any undefined values
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type', 
+    'Accept',
+    'Authorization',
+    'Cache-Control'
+  ],
   optionsSuccessStatus: 200
 };
 
+// ✅ Apply CORS before any routes
 app.use(cors(corsOptions));
+
+// ✅ Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Connect to MongoDB
 const mongoose = require('mongoose');
@@ -31,6 +47,17 @@ mongoose.connect(databaseUrl)
   .catch(err => {
     console.error('Error connecting to MongoDB:', err);
   });
+
+// ✅ Add a health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    origin: req.headers.origin,
+    allowedOrigins: corsOptions.origin
+  });
+});
+
 //routes
 const authRoutes = require('./api/routes/authRoutes');
 const patientRoutes = require('./api/routes/patientRoutes');
