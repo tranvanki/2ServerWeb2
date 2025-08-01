@@ -2,26 +2,38 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Staff = require('../models/Staffs');
 const {authorizeRoles,authenticateToken} = require('../middleware/authMiddleware');
-
 const signup = async (req, res) => {
     const { staff_id, staff_name, email, date_of_birth, password, department, specialization, shift_time, role } = req.body;
     try {
+        // Check for existing email (you already have this - good!)
+        const existingStaff = await Staff.findOne({ email: email.toLowerCase() });
+        if (existingStaff) {
+            return res.status(400).json({ message: 'Staff member already exists' });
+        }
+        
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newStaff = new Staff({ staff_id, 
-    staff_name, 
-    email, 
-    date_of_birth, 
-    password: hashedPassword, 
-    department, 
-    specialization, 
-    shift_time, 
-    role
-});
+        const newStaff = new Staff({ 
+            staff_id, 
+            staff_name, 
+            email: email.toLowerCase(), 
+            date_of_birth, 
+            password: hashedPassword, 
+            department, 
+            specialization, 
+            shift_time, 
+            role
+        });
+        
         await newStaff.save();
         res.status(201).json({ message: 'Staff signed up successfully' });
     } catch (err) {
         console.error(err);
-        res.status(500).send('Error signing up');
+        // Handle MongoDB duplicate key error as fallback
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            return res.status(400).json({ message: `${field} already exists` });
+        }
+        res.status(500).json({ message: 'Error signing up' });
     }
 };
 
